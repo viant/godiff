@@ -94,7 +94,7 @@ func (s *mapDiffer) diffIfaceElement(changeLog *ChangeLog, path *Path, from, to 
 		to = toValue.Elem()
 	}
 
-	itemDiffer, err := s.config.registry.get(fromValue.Type(), toValue.Type(), s.tag)
+	itemDiffer, err := s.config.registry.Get(fromValue.Type(), toValue.Type(), s.tag)
 	if err != nil {
 		return err
 	}

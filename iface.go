@@ -29,7 +29,7 @@ func (d *ifaceDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{
 	}
 
 	if fromStruct != nil && toStruct != nil {
-		differ, err := d.config.registry.get(fromStruct, toStruct, d.tag)
+		differ, err := d.config.registry.Get(fromStruct, toStruct, d.tag)
 		if err != nil {
 			return err
 		}
@@ -43,7 +43,7 @@ func (d *ifaceDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{
 	}
 
 	if from == nil && toStruct != nil {
-		differ, err := d.config.registry.get(toStruct, toStruct, d.tag)
+		differ, err := d.config.registry.Get(toStruct, toStruct, d.tag)
 		if err != nil {
 			return err
 		}
@@ -54,7 +54,7 @@ func (d *ifaceDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{
 	}
 
 	if to == nil && fromStruct != nil {
-		differ, err := d.config.registry.get(fromStruct, fromStruct, d.tag)
+		differ, err := d.config.registry.Get(fromStruct, fromStruct, d.tag)
 		if err != nil {
 			return err
 		}

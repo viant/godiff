@@ -232,7 +232,7 @@ func (s *sliceDiffer) diffIfaceElement(changeLog *ChangeLog, path *Path, from, t
 		to = toValue.Elem()
 	}
 
-	itemDiffer, err := s.config.registry.get(fromValue.Type(), toValue.Type(), s.tag)
+	itemDiffer, err := s.config.registry.Get(fromValue.Type(), toValue.Type(), s.tag)
 	if err != nil {
 		return err
 	}
