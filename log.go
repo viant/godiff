@@ -1,6 +1,8 @@
 package godiff
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 type (
 	//ChangeLog represents a change log
@@ -43,16 +45,17 @@ func (l *ChangeLog) AddUpdate(path *Path, from, to interface{}) {
 }
 
 //ToChangeRecords converts changeLog to change records
-func (l *ChangeLog) ToChangeRecords(source, id string) []*ChangeRecord {
+func (l *ChangeLog) ToChangeRecords(source, id, userID string) []*ChangeRecord {
 	var result []*ChangeRecord
 	for _, change := range l.Changes {
 		result = append(result, &ChangeRecord{
-			Source: source,
-			ID:     id,
-			Path:   change.Path.String(),
-			Change: string(change.Type),
-			From:   change.From,
-			To:     change.To,
+			Source:   source,
+			SourceID: id,
+			UserID:   userID,
+			Path:     change.Path.String(),
+			Change:   string(change.Type),
+			From:     change.From,
+			To:       change.To,
 		})
 	}
 	return result
@@ -63,7 +66,7 @@ func (l *ChangeLog) String() string {
 	if len(l.Changes) == 0 {
 		return ""
 	}
-	records := l.ToChangeRecords("", "")
+	records := l.ToChangeRecords("", "", "")
 	result, _ := json.Marshal(records)
 	return string(result)
 }

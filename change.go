@@ -15,13 +15,14 @@ type (
 
 	//ChangeRecord defines a change record
 	ChangeRecord struct {
-		Source string `json:",omitempty"`
-		ID     string `json:",omitempty"`
-		Path   string
-		Change string
-		From   interface{} `json:",omitempty"`
-		To     interface{} `json:",omitempty"`
-		Error  string      `json:",omitempty"`
+		Source   string `json:",omitempty"`
+		SourceID string `json:",omitempty"`
+		UserID   string `json:",omitempty"`
+		Path     string
+		Change   string
+		From     interface{} `json:",omitempty"`
+		To       interface{} `json:",omitempty"`
+		Error    string      `json:",omitempty"`
 	}
 
 	//Change represents a change
