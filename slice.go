@@ -157,10 +157,24 @@ func (s *sliceDiffer) diffIndexedElement(changeLog *ChangeLog, path *Path, fromI
 
 func (s *sliceDiffer) diffIfacedSlice(changeLog *ChangeLog, path *Path, from interface{}, to interface{}, changeType ChangeType) error {
 	var repeat int
+
+	changeType = ChangeTypeUpdate
 	fromPtr := xunsafe.AsPointer(from)
+	var fromLen = 0
+	if from != nil {
+		fromLen = s.fromSlice.Len(fromPtr)
+	} else {
+		changeType = ChangeTypeCreate
+	}
+
+	toLen := 0
 	toPtr := xunsafe.AsPointer(to)
-	fromLen := s.fromSlice.Len(fromPtr)
-	toLen := s.fromSlice.Len(toPtr)
+	if to != nil {
+		toLen = s.fromSlice.Len(toPtr)
+	} else {
+		changeType = ChangeTypeDelete
+	}
+
 	if repeat = fromLen; repeat < toLen {
 		repeat = toLen
 	}

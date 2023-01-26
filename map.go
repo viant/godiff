@@ -98,6 +98,8 @@ func (s *mapDiffer) diffIfaceElement(changeLog *ChangeLog, path *Path, from, to 
 	if err != nil {
 		return err
 	}
+
+	fmt.Printf("from :%T to: %T\n", from, to)
 	return itemDiffer.diff(changeLog, path.Entry(key), from, to, changeType)
 }
 

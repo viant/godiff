@@ -120,8 +120,8 @@ func TestNewDiffer(t *testing.T) {
 			from:        &Repeated{ID: 1, Records: []*Record{{ID: 12}}, Nums: []int{10, 2}},
 			to:          &Repeated{ID: 1, Records: []*Record{{ID: 23}}},
 			expect: &ChangeLog{Changes: []*Change{
-				{Type: "create", Path: &Path{Kind: 3, Path: &Path{Kind: 1, Path: &Path{}, Name: "Nums"}, Index: 0}, From: nil, To: 10},
-				{Type: "create", Path: &Path{Kind: 3, Path: &Path{Kind: 1, Path: &Path{}, Name: "Nums"}, Index: 1}, From: nil, To: 2},
+				{Type: "create", Path: &Path{Kind: 3, Path: &Path{Kind: 1, Path: &Path{}, Name: "Nums"}, Index: 0}, To: 10},
+				{Type: "create", Path: &Path{Kind: 3, Path: &Path{Kind: 1, Path: &Path{}, Name: "Nums"}, Index: 1}, To: 2},
 				{Type: "update", Path: &Path{Kind: 1, Path: &Path{Kind: 3, Path: &Path{Kind: 1, Path: &Path{}, Name: "Records"}, Index: 0}, Name: "ID"}, From: 12, To: 23},
 			}},
 		},
