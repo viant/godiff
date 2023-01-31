@@ -196,14 +196,12 @@ func (s *sliceDiffer) diffIfacedSlice(changeLog *ChangeLog, path *Path, from int
 			}
 		case ChangeTypeUpdate:
 
-			//if fromLen <= i {
 			if i < fromLen && i >= toLen {
 				value := s.toSlice.ValueAt(toPtr, i)
 				if err = s.diffIfaceElement(changeLog, path, nil, value, i, ChangeTypeCreate); err != nil {
 					return err
 				}
 				continue
-				//} else if toLen <= i {
 			}
 
 			if i < toLen && i >= fromLen {
