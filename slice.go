@@ -160,14 +160,14 @@ func (s *sliceDiffer) diffIfacedSlice(changeLog *ChangeLog, path *Path, from int
 
 	changeType = ChangeTypeUpdate
 	fromPtr := xunsafe.AsPointer(from)
-	var fromLen = 0
+	var fromLen = -1
 	if from != nil {
 		fromLen = s.fromSlice.Len(fromPtr)
 	} else {
 		changeType = ChangeTypeCreate
 	}
 
-	toLen := 0
+	toLen := -1
 	toPtr := xunsafe.AsPointer(to)
 	if to != nil {
 		toLen = s.fromSlice.Len(toPtr)
@@ -196,13 +196,17 @@ func (s *sliceDiffer) diffIfacedSlice(changeLog *ChangeLog, path *Path, from int
 			}
 		case ChangeTypeUpdate:
 
-			if fromLen <= i {
+			//if fromLen <= i {
+			if i < fromLen && i >= toLen {
 				value := s.toSlice.ValueAt(toPtr, i)
 				if err = s.diffIfaceElement(changeLog, path, nil, value, i, ChangeTypeCreate); err != nil {
 					return err
 				}
 				continue
-			} else if toLen <= i {
+				//} else if toLen <= i {
+			}
+
+			if i < toLen && i >= fromLen {
 				value := s.toSlice.ValueAt(toPtr, i)
 				if err = s.diffIfaceElement(changeLog, path, value, nil, i, ChangeTypeDelete); err != nil {
 					return err
@@ -226,10 +230,10 @@ func (s *sliceDiffer) diffIfaceElement(changeLog *ChangeLog, path *Path, from, t
 	if from == nil && to == nil {
 		return nil
 	}
-	if to != nil || changeType == ChangeTypeDelete {
+	if to != nil {
 		toValue = reflect.ValueOf(to)
 		fromValue = toValue
-	} else if from != nil || changeType == ChangeTypeCreate {
+	} else if from != nil {
 		fromValue = reflect.ValueOf(from)
 		toValue = fromValue
 	} else {
