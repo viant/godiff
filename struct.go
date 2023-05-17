@@ -35,13 +35,23 @@ func (s *structDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface
 		if fromValue == nil && toValue == nil {
 			continue
 		}
-
 		if field.differ != nil {
+			diffChangeType := ChangeTypeUpdate
 			if field.Kind == reflect.Slice {
-				fromValue = field.from.Addr(fromPtr)
-				toValue = field.to.Addr(toPtr)
+				if fromValue != nil {
+					fromValue = field.from.Addr(fromPtr)
+				} else {
+					diffChangeType = ChangeTypeCreate
+				}
+				if toValue != nil {
+					toValue = field.to.Addr(toPtr)
+					diffChangeType = ChangeTypeDelete
+				}
 			}
-			if err = field.differ.diff(changeLog, path.Field(field.name), fromValue, toValue, ChangeTypeUpdate); err != nil {
+			if fromValue == nil {
+
+			}
+			if err = field.differ.diff(changeLog, path.Field(field.name), fromValue, toValue, diffChangeType); err != nil {
 				return err
 			}
 			continue

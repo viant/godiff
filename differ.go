@@ -42,7 +42,6 @@ func (d *Differ) diff(changeLog *ChangeLog, aPath *Path, from, to interface{}, f
 		if to != nil {
 			to = d.decoder(to)
 		}
-
 	}
 
 	if d.structDiffer != nil {
