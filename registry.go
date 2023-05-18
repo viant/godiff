@@ -11,7 +11,7 @@ type Registry struct {
 	differs map[reflect.Type]map[reflect.Type]*Differ
 }
 
-func (r *Registry) Get(from, to reflect.Type, tag *Tag) (*Differ, error) {
+func (r *Registry) Get(from, to reflect.Type, tag *Tag, options ...Option) (*Differ, error) {
 	if tag != nil && (tag.PairSeparator != "" || tag.ItemSeparator != "") {
 		return New(from, to, WithRegistry(r), WithTag(tag))
 	}
@@ -23,7 +23,8 @@ func (r *Registry) Get(from, to reflect.Type, tag *Tag) (*Differ, error) {
 		return differ, nil
 	}
 	var err error
-	if differ, err = New(from, to, WithRegistry(r), WithTag(tag)); err != nil {
+	options = append(options, WithRegistry(r), WithTag(tag))
+	if differ, err = New(from, to, options...); err != nil {
 		return nil, err
 	}
 	r.RWMutex.Lock()
