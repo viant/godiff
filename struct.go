@@ -8,12 +8,13 @@ import (
 
 type (
 	structDiffer struct {
-		config   *Config
-		from     *xunsafe.Struct
-		to       *xunsafe.Struct
-		fromType reflect.Type
-		toType   reflect.Type
-		fields   []*field
+		config           *Config
+		from             *xunsafe.Struct
+		to               *xunsafe.Struct
+		fromType         reflect.Type
+		toType           reflect.Type
+		fields           []*field
+		presenceProvider PresenceProvider
 	}
 )
 
@@ -31,6 +32,9 @@ func (s *structDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface
 		if toValue, err = field.to.Value(toPtr); err != nil {
 			changeLog.AddError(path.Field(field.name), err)
 			continue
+		}
+		if s.config.withPresence && !s.presenceProvider.IsFieldSet(toPtr, int(field.to.Index)) {
+			continue //skip diff, to/dest is not set
 		}
 		if fromValue == nil && toValue == nil {
 			continue
@@ -84,16 +88,23 @@ func (s *structDiffer) matchFields() error {
 		matcher.build(s.to, s.config)
 	}
 
+	var filedPos = map[string]int{}
 	for i := range s.from.Fields {
 		fromField := &s.from.Fields[i]
+		filedPos[fromField.Name] = int(fromField.Index)
 		tag, err := ParseTag(fromField.Tag.Get(s.config.TagName))
 		if err != nil {
 			return err
+		}
+		if tag.Presence {
+			s.presenceProvider.Holder = fromField
+			continue
 		}
 		if tag.Ignore {
 			continue
 		}
 		tag.init(s.config)
+
 		fromAccessor := newAccessor(i, fromField, tag)
 		toAccessor := fromAccessor
 		if !typesMatches {
@@ -142,6 +153,9 @@ func (s *structDiffer) matchFields() error {
 			}
 		}
 	}
+	if s.presenceProvider.Holder != nil {
+		s.presenceProvider.Init(filedPos)
+	}
 	s.fields = fields
 	return nil
 }
@@ -165,5 +179,6 @@ func newStructDiffer(from, to reflect.Type, config *Config) (*structDiffer, erro
 	if err := result.matchFields(); err != nil {
 		return nil, err
 	}
+
 	return &result, nil
 }

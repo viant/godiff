@@ -11,6 +11,21 @@ import (
 
 func TestNewDiffer(t *testing.T) {
 
+	type PresRecordHas struct {
+		ID         bool
+		Name       bool
+		ScratchPad bool
+		Time       bool
+	}
+	type PresRecord struct {
+		ID         int
+		Name       string
+		ScratchPad string `diff:"-"`
+		Time       time.Time
+		Bar        int
+		Has        *PresRecordHas `diff:"presence=true"`
+	}
+
 	type Record struct {
 		ID         int
 		Name       string
@@ -209,9 +224,21 @@ func TestNewDiffer(t *testing.T) {
 				{Type: "create", Path: &Path{Kind: PathKindIndex, Path: &Path{Kind: PathKindKey, Path: &Path{Kind: PathKinField, Path: &Path{}, Name: "ExprList"}, Key: "k1"}, Index: 0}, To: "0"},
 			}},
 		},
+		{description: "diff with field presence check",
+			from: &PresRecord{ID: 20, Name: "abc", Bar: 23},
+			to: &PresRecord{ID: 21, Name: "xyz", ScratchPad: "xx",
+				Has: &PresRecordHas{
+					Name:       true,
+					ScratchPad: true,
+				},
+			},
+			options: []Option{WithPresence(true)},
+			expect: &ChangeLog{Changes: []*Change{
+				{Type: "update", Path: &Path{Kind: PathKinField, Path: &Path{}, Name: "Name"}, From: "abc", To: "xyz"},
+			}},
+		},
 	}
-
-	for _, testCase := range testCases {
+	for _, testCase := range testCases[len(testCases)-1:] {
 		differ, err := New(reflect.TypeOf(testCase.from), reflect.TypeOf(testCase.to), testCase.options...)
 		if !assert.Nil(t, err, testCase.description) {
 			continue

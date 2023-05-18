@@ -10,6 +10,7 @@ type Config struct {
 	StrictMode   bool   //non-strict mode allows string with non-string matches
 	tag          *Tag
 	registry     *Registry
+	withPresence bool
 }
 
 //Init init config

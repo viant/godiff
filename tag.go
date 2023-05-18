@@ -8,8 +8,8 @@ import (
 
 //Tag represents a tag
 type Tag struct {
-	Name string
-
+	Name          string
+	Presence      bool
 	PairSeparator string
 	PairDelimiter string
 	pairDelimiter []string
@@ -76,6 +76,8 @@ func ParseTag(tagString string) (*Tag, error) {
 		switch len(nv) {
 		case 2:
 			switch strings.ToLower(strings.TrimSpace(nv[0])) {
+			case "presence":
+				tag.Presence = true
 			case "name":
 				tag.Name = strings.TrimSpace(nv[1])
 			case "indexby":
@@ -102,6 +104,7 @@ func ParseTag(tagString string) (*Tag, error) {
 			continue
 		case 1:
 			tag.Name = strings.TrimSpace(element)
+
 		}
 	}
 	return tag, nil

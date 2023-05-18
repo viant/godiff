@@ -17,6 +17,12 @@ func WithTag(tag *Tag) Option {
 	}
 }
 
+func WithPresence(f bool) Option {
+	return func(config *Config) {
+		config.withPresence = f
+	}
+}
+
 //NullifyEmpty updated config option
 func NullifyEmpty(flag bool) Option {
 	return func(config *Config) {
