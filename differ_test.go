@@ -225,7 +225,11 @@ func TestNewDiffer(t *testing.T) {
 			}},
 		},
 		{description: "diff with field presence check",
-			from: &PresRecord{ID: 20, Name: "abc", Bar: 23},
+			from: &PresRecord{ID: 20, Name: "abc", Bar: 23,
+				Has: &PresRecordHas{
+					Name: true,
+					ID:   true,
+				}},
 			to: &PresRecord{ID: 21, Name: "xyz", ScratchPad: "xx",
 				Has: &PresRecordHas{
 					Name:       true,
