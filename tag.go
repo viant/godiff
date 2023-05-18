@@ -78,6 +78,8 @@ func ParseTag(tagString string) (*Tag, error) {
 			switch strings.ToLower(strings.TrimSpace(nv[0])) {
 			case "presence":
 				tag.Presence = true
+			case "ignore":
+				tag.Ignore = true
 			case "name":
 				tag.Name = strings.TrimSpace(nv[1])
 			case "indexby":
