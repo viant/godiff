@@ -238,7 +238,7 @@ func TestNewDiffer(t *testing.T) {
 			}},
 		},
 	}
-	for _, testCase := range testCases[len(testCases)-1:] {
+	for _, testCase := range testCases {
 		differ, err := New(reflect.TypeOf(testCase.from), reflect.TypeOf(testCase.to), testCase.options...)
 		if !assert.Nil(t, err, testCase.description) {
 			continue
