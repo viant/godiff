@@ -11,7 +11,7 @@ type Registry struct {
 	differs map[reflect.Type]map[reflect.Type]*Differ
 }
 
-func (r *Registry) Get(from, to reflect.Type, tag *Tag, options ...Option) (*Differ, error) {
+func (r *Registry) Get(from, to reflect.Type, tag *Tag, options ...ConfigOption) (*Differ, error) {
 	if tag != nil && (tag.PairSeparator != "" || tag.ItemSeparator != "") {
 		return New(from, to, WithRegistry(r), WithTag(tag))
 	}

@@ -1,44 +1,68 @@
 package godiff
 
-//Option represents an option
-type Option func(config *Config)
+//ConfigOption represents an option
+type ConfigOption func(config *Config)
+
+type Options struct {
+	presence     bool
+	shallow      bool
+	nullifyEmpty *bool
+	depth        int
+}
+
+func (o *Options) decDepth() {
+	o.depth--
+}
+func (o *Options) Apply(options []Option) {
+	for _, item := range options {
+		item(o)
+	}
+}
+
+type Option func(c *Options)
 
 //WithTagName updated config tag
-func WithTagName(name string) Option {
+func WithTagName(name string) ConfigOption {
 	return func(config *Config) {
 		config.TagName = name
 	}
 }
 
 //WithTag updated config tag
-func WithTag(tag *Tag) Option {
+func WithTag(tag *Tag) ConfigOption {
 	return func(config *Config) {
 		config.tag = tag
 	}
 }
 
 func WithPresence(f bool) Option {
-	return func(config *Config) {
-		config.withPresence = f
+	return func(options *Options) {
+		options.presence = f
+	}
+}
+
+func WithShallow(f bool) Option {
+	return func(options *Options) {
+		options.shallow = f
 	}
 }
 
 //NullifyEmpty updated config option
-func NullifyEmpty(flag bool) Option {
-	return func(config *Config) {
-		config.NullifyEmpty = &flag
+func NullifyEmpty(flag bool) ConfigOption {
+	return func(options *Config) {
+		options.NullifyEmpty = &flag
 	}
 }
 
 //WithConfig updated config tag
-func WithConfig(cfg *Config) Option {
+func WithConfig(cfg *Config) ConfigOption {
 	return func(config *Config) {
 		*config = *cfg
 	}
 }
 
 //WithRegistry updated config with registry
-func WithRegistry(registry *Registry) Option {
+func WithRegistry(registry *Registry) ConfigOption {
 	return func(config *Config) {
 		config.registry = registry
 	}

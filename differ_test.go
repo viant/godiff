@@ -69,11 +69,12 @@ func TestNewDiffer(t *testing.T) {
 	}
 
 	var testCases = []struct {
-		description string
-		options     []Option
-		from        interface{}
-		to          interface{}
-		expect      *ChangeLog
+		description   string
+		configOptions []ConfigOption
+		options       []Option
+		from          interface{}
+		to            interface{}
+		expect        *ChangeLog
 	}{
 		{
 			description: "basic struct - delete",
@@ -236,18 +237,29 @@ func TestNewDiffer(t *testing.T) {
 					ScratchPad: true,
 				},
 			},
+
 			options: []Option{WithPresence(true)},
 			expect: &ChangeLog{Changes: []*Change{
 				{Type: "update", Path: &Path{Kind: PathKinField, Path: &Path{}, Name: "Name"}, From: "abc", To: "xyz"},
 			}},
 		},
+
+		{
+			description: "repeated - update - shallow",
+			from:        &Repeated{ID: 1, Records: []*Record{{ID: 12}}, Nums: []int{10, 2}},
+			to:          &Repeated{ID: 2, Records: []*Record{{ID: 23}}},
+			options:     []Option{WithShallow(true)},
+			expect: &ChangeLog{Changes: []*Change{
+				{Type: "update", Path: &Path{Kind: 1, Path: &Path{}, Name: "ID"}, From: 1, To: 2},
+			}},
+		},
 	}
 	for _, testCase := range testCases {
-		differ, err := New(reflect.TypeOf(testCase.from), reflect.TypeOf(testCase.to), testCase.options...)
+		differ, err := New(reflect.TypeOf(testCase.from), reflect.TypeOf(testCase.to), testCase.configOptions...)
 		if !assert.Nil(t, err, testCase.description) {
 			continue
 		}
-		changeLog := differ.Diff(testCase.from, testCase.to)
+		changeLog := differ.Diff(testCase.from, testCase.to, testCase.options...)
 		if !assert.EqualValues(t, testCase.expect, changeLog, testCase.description) {
 			data, _ := json.Marshal(changeLog)
 			fmt.Println(string(data))

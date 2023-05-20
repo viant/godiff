@@ -18,7 +18,7 @@ type (
 	}
 )
 
-func (s *structDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{}, changeType ChangeType) error {
+func (s *structDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{}, changeType ChangeType, options *Options) error {
 	fromPtr := xunsafe.AsPointer(from)
 	toPtr := xunsafe.AsPointer(to)
 	var err error
@@ -33,7 +33,7 @@ func (s *structDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface
 			changeLog.AddError(path.Field(field.name), err)
 			continue
 		}
-		if s.config.withPresence {
+		if options.presence {
 			if !s.presenceProvider.IsFieldSet(toPtr, int(field.to.Index)) {
 				continue //skip diff, to/dest is not set
 			}
@@ -61,7 +61,7 @@ func (s *structDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface
 			if fromValue == nil {
 
 			}
-			if err = field.differ.diff(changeLog, path.Field(field.name), fromValue, toValue, diffChangeType); err != nil {
+			if err = field.differ.diff(changeLog, path.Field(field.name), fromValue, toValue, diffChangeType, options); err != nil {
 				return err
 			}
 			continue

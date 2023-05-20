@@ -11,7 +11,7 @@ type (
 	}
 )
 
-func (d *ifaceDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{}, changeType ChangeType) error {
+func (d *ifaceDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{}, changeType ChangeType, options *Options) error {
 	if from == nil && to == nil {
 		return nil
 	}
@@ -39,7 +39,7 @@ func (d *ifaceDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{
 		if toValue.Kind() == reflect.Ptr {
 			to = toValue.Elem().Interface()
 		}
-		return differ.diff(changeLog, path, from, to, changeType)
+		return differ.diff(changeLog, path, from, to, changeType, options)
 	}
 
 	if from == nil && toStruct != nil {
@@ -50,7 +50,7 @@ func (d *ifaceDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{
 		if toValue.Kind() == reflect.Ptr {
 			to = toValue.Elem().Interface()
 		}
-		return differ.diff(changeLog, path, from, to, ChangeTypeCreate)
+		return differ.diff(changeLog, path, from, to, ChangeTypeCreate, options)
 	}
 
 	if to == nil && fromStruct != nil {
@@ -61,7 +61,7 @@ func (d *ifaceDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{
 		if fromValue.Kind() == reflect.Ptr {
 			from = fromValue.Elem().Interface()
 		}
-		return differ.diff(changeLog, path, from, to, ChangeTypeDelete)
+		return differ.diff(changeLog, path, from, to, ChangeTypeDelete, options)
 	}
 
 	return nil

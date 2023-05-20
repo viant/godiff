@@ -19,22 +19,25 @@ type Differ struct {
 }
 
 //Diff creates change log based on comparison from and to values
-func (d *Differ) Diff(from, to interface{}) *ChangeLog {
+func (d *Differ) Diff(from, to interface{}, opts ...Option) *ChangeLog {
+	options := &Options{}
+	options.Apply(opts)
 	changeLog := &ChangeLog{}
 	root := &Path{}
 	fieldChangeType := discoverChangeType(from, to)
 	var err error
 
-	err = d.diff(changeLog, root, from, to, fieldChangeType)
+	err = d.diff(changeLog, root, from, to, fieldChangeType, options)
 	if err != nil {
 		changeLog.AddError(root, err)
 	}
 	return changeLog
 }
 
-func (d *Differ) diff(changeLog *ChangeLog, aPath *Path, from, to interface{}, fieldChangeType ChangeType) error {
+func (d *Differ) diff(changeLog *ChangeLog, aPath *Path, from, to interface{}, fieldChangeType ChangeType, options *Options) error {
 	var err error
-
+	options.depth++
+	defer options.decDepth()
 	if d.decoder != nil {
 		if from != nil {
 			from = d.decoder(from)
@@ -44,14 +47,18 @@ func (d *Differ) diff(changeLog *ChangeLog, aPath *Path, from, to interface{}, f
 		}
 	}
 
+	if options.shallow && options.depth > 1 {
+		return nil
+	}
+
 	if d.structDiffer != nil {
-		err = d.structDiffer.diff(changeLog, aPath, from, to, fieldChangeType)
+		err = d.structDiffer.diff(changeLog, aPath, from, to, fieldChangeType, options)
 	} else if d.sliceDiffer != nil {
-		err = d.sliceDiffer.diff(changeLog, aPath, from, to, fieldChangeType)
+		err = d.sliceDiffer.diff(changeLog, aPath, from, to, fieldChangeType, options)
 	} else if d.ifaceDiffer != nil {
-		err = d.ifaceDiffer.diff(changeLog, aPath, from, to, fieldChangeType)
+		err = d.ifaceDiffer.diff(changeLog, aPath, from, to, fieldChangeType, options)
 	} else if d.mapDiffer != nil {
-		err = d.mapDiffer.diff(changeLog, aPath, from, to, fieldChangeType)
+		err = d.mapDiffer.diff(changeLog, aPath, from, to, fieldChangeType, options)
 	} else {
 		if !matches(from, to) {
 			switch {
@@ -125,7 +132,7 @@ func (d *Differ) decodedMapDiff() (*Differ, error) {
 }
 
 //New creates a differ
-func New(from, to reflect.Type, opts ...Option) (*Differ, error) {
+func New(from, to reflect.Type, opts ...ConfigOption) (*Differ, error) {
 	var result = &Differ{config: &Config{}}
 	for _, opt := range opts {
 		opt(result.config)

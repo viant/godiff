@@ -14,7 +14,7 @@ type mapDiffer struct {
 	isStringIface bool
 }
 
-func (s *mapDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{}, changeType ChangeType) error {
+func (s *mapDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{}, changeType ChangeType, options *Options) error {
 	if from == nil && to == nil {
 		return nil
 	}
@@ -37,13 +37,13 @@ func (s *mapDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{},
 
 	if from == nil {
 		for k, v := range toMap {
-			if err = s.diffIfaceElement(changeLog, path, nil, v, k, ChangeTypeDelete); err != nil {
+			if err = s.diffIfaceElement(changeLog, path, nil, v, k, ChangeTypeDelete, options); err != nil {
 				return err
 			}
 		}
 	} else if to == nil {
 		for k, v := range fromMap {
-			if err = s.diffIfaceElement(changeLog, path, v, nil, k, ChangeTypeCreate); err != nil {
+			if err = s.diffIfaceElement(changeLog, path, v, nil, k, ChangeTypeCreate, options); err != nil {
 				return err
 			}
 		}
@@ -51,7 +51,7 @@ func (s *mapDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{},
 
 		for k, fromItem := range fromMap {
 			toItem := toMap[k]
-			if err = s.diffIfaceElement(changeLog, path, fromItem, toItem, k, ChangeTypeCreate); err != nil {
+			if err = s.diffIfaceElement(changeLog, path, fromItem, toItem, k, ChangeTypeCreate, options); err != nil {
 				return err
 			}
 		}
@@ -60,7 +60,7 @@ func (s *mapDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{},
 			if _, has := fromMap[k]; has {
 				continue
 			}
-			if err = s.diffIfaceElement(changeLog, path, nil, toItem, k, ChangeTypeCreate); err != nil {
+			if err = s.diffIfaceElement(changeLog, path, nil, toItem, k, ChangeTypeCreate, options); err != nil {
 				return err
 			}
 		}
@@ -68,7 +68,7 @@ func (s *mapDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{},
 	return nil
 }
 
-func (s *mapDiffer) diffIfaceElement(changeLog *ChangeLog, path *Path, from, to interface{}, key string, changeType ChangeType) error {
+func (s *mapDiffer) diffIfaceElement(changeLog *ChangeLog, path *Path, from, to interface{}, key string, changeType ChangeType, options *Options) error {
 	var fromValue, toValue reflect.Value
 	if from == nil && to == nil {
 		return nil
@@ -98,7 +98,7 @@ func (s *mapDiffer) diffIfaceElement(changeLog *ChangeLog, path *Path, from, to 
 	if err != nil {
 		return err
 	}
-	return itemDiffer.diff(changeLog, path.Entry(key), from, to, changeType)
+	return itemDiffer.diff(changeLog, path.Entry(key), from, to, changeType, options)
 }
 
 func newMapDiffer(from, to reflect.Type, config *Config, tag *Tag) (*mapDiffer, error) {

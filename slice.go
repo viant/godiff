@@ -17,15 +17,15 @@ type sliceDiffer struct {
 	toIndexer   indexer
 }
 
-func (s *sliceDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{}, changeType ChangeType) error {
+func (s *sliceDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{}, changeType ChangeType, options *Options) error {
 	if s.isInterface {
-		return s.diffIfacedSlice(changeLog, path, from, to, changeType)
+		return s.diffIfacedSlice(changeLog, path, from, to, changeType, options)
 
 	}
-	return s.diffTypedSlice(changeLog, path, from, to, changeType)
+	return s.diffTypedSlice(changeLog, path, from, to, changeType, options)
 }
 
-func (s *sliceDiffer) diffTypedSlice(changeLog *ChangeLog, path *Path, from interface{}, to interface{}, changeType ChangeType) error {
+func (s *sliceDiffer) diffTypedSlice(changeLog *ChangeLog, path *Path, from interface{}, to interface{}, changeType ChangeType, options *Options) error {
 	fromPtr := xunsafe.AsPointer(from)
 	toPtr := xunsafe.AsPointer(to)
 
@@ -54,13 +54,13 @@ func (s *sliceDiffer) diffTypedSlice(changeLog *ChangeLog, path *Path, from inte
 	if by := s.tag.IndexBy; by != "" && fromLen > 0 && toLen > 0 {
 		fromIndex := s.fromIndexer.indexBy(s.fromSlice, fromPtr, by)
 		toIndex := s.toIndexer.indexBy(s.toSlice, toPtr, by)
-		return s.diffIndexedElement(changeLog, path, fromIndex, toIndex, changeType)
+		return s.diffIndexedElement(changeLog, path, fromIndex, toIndex, changeType, options)
 	}
 
-	return s.diffSliceElements(changeLog, path, changeType, toPtr, fromPtr, fromLen, toLen)
+	return s.diffSliceElements(changeLog, path, changeType, toPtr, fromPtr, fromLen, toLen, options)
 }
 
-func (s *sliceDiffer) diffSliceElements(changeLog *ChangeLog, path *Path, changeType ChangeType, toPtr unsafe.Pointer, fromPtr unsafe.Pointer, fromLen int, toLen int) error {
+func (s *sliceDiffer) diffSliceElements(changeLog *ChangeLog, path *Path, changeType ChangeType, toPtr unsafe.Pointer, fromPtr unsafe.Pointer, fromLen int, toLen int, options *Options) error {
 	var repeat int
 	if repeat = fromLen; repeat < toLen {
 		repeat = toLen
@@ -71,7 +71,7 @@ func (s *sliceDiffer) diffSliceElements(changeLog *ChangeLog, path *Path, change
 		case ChangeTypeCreate:
 			value := s.toSlice.ValueAt(toPtr, i)
 			if s.itemDiffer != nil {
-				if err = s.itemDiffer.diff(changeLog, path.Element(i), nil, value, changeType); err != nil {
+				if err = s.itemDiffer.diff(changeLog, path.Element(i), nil, value, changeType, options); err != nil {
 					return err
 				}
 				continue
@@ -81,7 +81,7 @@ func (s *sliceDiffer) diffSliceElements(changeLog *ChangeLog, path *Path, change
 		case ChangeTypeDelete:
 			value := s.fromSlice.ValueAt(fromPtr, i)
 			if s.itemDiffer != nil {
-				if err = s.itemDiffer.diff(changeLog, path.Element(i), value, nil, changeType); err != nil {
+				if err = s.itemDiffer.diff(changeLog, path.Element(i), value, nil, changeType, options); err != nil {
 					return err
 				}
 				continue
@@ -91,7 +91,7 @@ func (s *sliceDiffer) diffSliceElements(changeLog *ChangeLog, path *Path, change
 			if fromLen <= i {
 				value := s.toSlice.ValueAt(toPtr, i)
 				if s.itemDiffer != nil {
-					if err = s.itemDiffer.diff(changeLog, path.Element(i), nil, value, ChangeTypeCreate); err != nil {
+					if err = s.itemDiffer.diff(changeLog, path.Element(i), nil, value, ChangeTypeCreate, options); err != nil {
 						return err
 					}
 					continue
@@ -101,7 +101,7 @@ func (s *sliceDiffer) diffSliceElements(changeLog *ChangeLog, path *Path, change
 			} else if toLen <= i {
 				value := s.fromSlice.ValueAt(fromPtr, i)
 				if s.itemDiffer != nil {
-					if err = s.itemDiffer.diff(changeLog, path.Element(i), value, nil, ChangeTypeDelete); err != nil {
+					if err = s.itemDiffer.diff(changeLog, path.Element(i), value, nil, ChangeTypeDelete, options); err != nil {
 						return err
 					}
 					continue
@@ -113,7 +113,7 @@ func (s *sliceDiffer) diffSliceElements(changeLog *ChangeLog, path *Path, change
 			fromItem := s.fromSlice.ValueAt(fromPtr, i)
 			toItem := s.toSlice.ValueAt(toPtr, i)
 			if s.itemDiffer != nil {
-				if err = s.itemDiffer.diff(changeLog, path.Element(i), fromItem, toItem, ChangeTypeUpdate); err != nil {
+				if err = s.itemDiffer.diff(changeLog, path.Element(i), fromItem, toItem, ChangeTypeUpdate, options); err != nil {
 					return err
 				}
 				continue
@@ -126,7 +126,7 @@ func (s *sliceDiffer) diffSliceElements(changeLog *ChangeLog, path *Path, change
 	return nil
 }
 
-func (s *sliceDiffer) diffIndexedElement(changeLog *ChangeLog, path *Path, fromIndex map[interface{}]*entry, toIndex map[interface{}]*entry, changeType ChangeType) error {
+func (s *sliceDiffer) diffIndexedElement(changeLog *ChangeLog, path *Path, fromIndex map[interface{}]*entry, toIndex map[interface{}]*entry, changeType ChangeType, options *Options) error {
 	for k := range fromIndex {
 		fromValue := fromIndex[k]
 		toValue, ok := toIndex[k]
@@ -135,7 +135,7 @@ func (s *sliceDiffer) diffIndexedElement(changeLog *ChangeLog, path *Path, fromI
 			continue
 		}
 		if s.itemDiffer != nil {
-			if err := s.itemDiffer.diff(changeLog, path, fromValue.value, toValue.value, ChangeTypeUpdate); err != nil {
+			if err := s.itemDiffer.diff(changeLog, path, fromValue.value, toValue.value, ChangeTypeUpdate, options); err != nil {
 				return err
 			}
 			continue
@@ -155,7 +155,7 @@ func (s *sliceDiffer) diffIndexedElement(changeLog *ChangeLog, path *Path, fromI
 	return nil
 }
 
-func (s *sliceDiffer) diffIfacedSlice(changeLog *ChangeLog, path *Path, from interface{}, to interface{}, changeType ChangeType) error {
+func (s *sliceDiffer) diffIfacedSlice(changeLog *ChangeLog, path *Path, from interface{}, to interface{}, changeType ChangeType, options *Options) error {
 	var repeat int
 
 	changeType = ChangeTypeUpdate
@@ -184,21 +184,21 @@ func (s *sliceDiffer) diffIfacedSlice(changeLog *ChangeLog, path *Path, from int
 		switch changeType {
 		case ChangeTypeCreate:
 			value := s.toSlice.ValueAt(toPtr, i)
-			if err = s.diffIfaceElement(changeLog, path, nil, value, i, changeType); err != nil {
+			if err = s.diffIfaceElement(changeLog, path, nil, value, i, changeType, options); err != nil {
 				return err
 			}
 			continue
 
 		case ChangeTypeDelete:
 			value := s.fromSlice.ValueAt(fromPtr, i)
-			if err = s.diffIfaceElement(changeLog, path, value, nil, i, changeType); err != nil {
+			if err = s.diffIfaceElement(changeLog, path, value, nil, i, changeType, options); err != nil {
 				return err
 			}
 		case ChangeTypeUpdate:
 
 			if i < fromLen && i >= toLen {
 				value := s.toSlice.ValueAt(toPtr, i)
-				if err = s.diffIfaceElement(changeLog, path, nil, value, i, ChangeTypeCreate); err != nil {
+				if err = s.diffIfaceElement(changeLog, path, nil, value, i, ChangeTypeCreate, options); err != nil {
 					return err
 				}
 				continue
@@ -206,7 +206,7 @@ func (s *sliceDiffer) diffIfacedSlice(changeLog *ChangeLog, path *Path, from int
 
 			if i < toLen && i >= fromLen {
 				value := s.toSlice.ValueAt(toPtr, i)
-				if err = s.diffIfaceElement(changeLog, path, value, nil, i, ChangeTypeDelete); err != nil {
+				if err = s.diffIfaceElement(changeLog, path, value, nil, i, ChangeTypeDelete, options); err != nil {
 					return err
 				}
 				continue
@@ -214,7 +214,7 @@ func (s *sliceDiffer) diffIfacedSlice(changeLog *ChangeLog, path *Path, from int
 
 			fromItem := s.fromSlice.ValueAt(fromPtr, i)
 			toItem := s.toSlice.ValueAt(toPtr, i)
-			if err = s.diffIfaceElement(changeLog, path, fromItem, toItem, i, ChangeTypeUpdate); err != nil {
+			if err = s.diffIfaceElement(changeLog, path, fromItem, toItem, i, ChangeTypeUpdate, options); err != nil {
 				return err
 			}
 			continue
@@ -223,7 +223,7 @@ func (s *sliceDiffer) diffIfacedSlice(changeLog *ChangeLog, path *Path, from int
 	return nil
 }
 
-func (s *sliceDiffer) diffIfaceElement(changeLog *ChangeLog, path *Path, from, to interface{}, index int, changeType ChangeType) error {
+func (s *sliceDiffer) diffIfaceElement(changeLog *ChangeLog, path *Path, from, to interface{}, index int, changeType ChangeType, options *Options) error {
 	var fromValue, toValue reflect.Value
 	if from == nil && to == nil {
 		return nil
@@ -252,7 +252,7 @@ func (s *sliceDiffer) diffIfaceElement(changeLog *ChangeLog, path *Path, from, t
 	if err != nil {
 		return err
 	}
-	return itemDiffer.diff(changeLog, path.Element(index), from, to, changeType)
+	return itemDiffer.diff(changeLog, path.Element(index), from, to, changeType, options)
 }
 
 func newSliceDiffer(from, to reflect.Type, config *Config, tag *Tag) (*sliceDiffer, error) {
