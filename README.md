@@ -90,6 +90,16 @@ Work in progress tag:
 - timeLayout
 - precision
 
+## Config option
+- WithTagName
+- WithRegistry
+- NullifyEmpty
+- WithConfig
+
+## Diff option
+- WithPresence
+- WithShallow
+
 ## Benchmark
 
 GoDiff is around 5x faster than s3lab diff.
