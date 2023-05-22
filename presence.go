@@ -27,6 +27,9 @@ func (p *PresenceProvider) IsFieldSet(ptr unsafe.Pointer, index int) bool {
 	if p == nil || p.Holder == nil {
 		return true //we do not have field presence provider so we assume all fields are set
 	}
+	if p.Holder.IsNil(ptr) {
+		return true //holder is nil
+	}
 	return p.Has(ptr, index)
 }
 
@@ -44,7 +47,7 @@ func (p *PresenceProvider) Init(filedPos map[string]int) error {
 			presentField := holderType.Field(i)
 			pos, ok := filedPos[presentField.Name]
 			if !ok {
-				return fmt.Errorf("failed to match presence field %v", presentField.Name)
+				return fmt.Errorf("failed to match presence field %v %v", presentField.Name, filedPos)
 			}
 			p.Fields[pos] = xunsafe.NewField(presentField)
 		}

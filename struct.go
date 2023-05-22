@@ -34,7 +34,13 @@ func (s *structDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface
 			continue
 		}
 		if options.presence {
-			if !s.presenceProvider.IsFieldSet(toPtr, int(field.to.Index)) {
+			hasPtr := toPtr
+			if s.presenceProvider.Holder != nil {
+				if s.presenceProvider.Holder.IsNil(toPtr) {
+					hasPtr = fromPtr
+				}
+			}
+			if !s.presenceProvider.IsFieldSet(hasPtr, int(field.to.Index)) {
 				continue //skip diff, to/dest is not set
 			}
 			if field.tag != nil && field.tag.Presence {

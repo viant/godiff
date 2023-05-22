@@ -57,10 +57,10 @@ func (s *sliceDiffer) diffTypedSlice(changeLog *ChangeLog, path *Path, from inte
 		return s.diffIndexedElement(changeLog, path, fromIndex, toIndex, changeType, options)
 	}
 
-	return s.diffSliceElements(changeLog, path, changeType, toPtr, fromPtr, fromLen, toLen, options)
+	return s.diffSliceElements(changeLog, path, changeType, fromPtr, toPtr, fromLen, toLen, options)
 }
 
-func (s *sliceDiffer) diffSliceElements(changeLog *ChangeLog, path *Path, changeType ChangeType, toPtr unsafe.Pointer, fromPtr unsafe.Pointer, fromLen int, toLen int, options *Options) error {
+func (s *sliceDiffer) diffSliceElements(changeLog *ChangeLog, path *Path, changeType ChangeType, fromPtr, toPtr unsafe.Pointer, fromLen int, toLen int, options *Options) error {
 	var repeat int
 	if repeat = fromLen; repeat < toLen {
 		repeat = toLen
