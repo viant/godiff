@@ -2,19 +2,20 @@ package godiff
 
 import (
 	"fmt"
+	"github.com/viant/structology"
 	"github.com/viant/xunsafe"
 	"reflect"
 )
 
 type (
 	structDiffer struct {
-		config           *Config
-		from             *xunsafe.Struct
-		to               *xunsafe.Struct
-		fromType         reflect.Type
-		toType           reflect.Type
-		fields           []*field
-		presenceProvider PresenceProvider
+		config   *Config
+		from     *xunsafe.Struct
+		to       *xunsafe.Struct
+		fromType reflect.Type
+		toType   reflect.Type
+		fields   []*field
+		marker   structology.Marker
 	}
 )
 
@@ -35,15 +36,13 @@ func (s *structDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface
 		}
 		if options.presence {
 			hasPtr := toPtr
-			if s.presenceProvider.Holder != nil {
-				if s.presenceProvider.Holder.IsNil(toPtr) {
-					hasPtr = fromPtr
-				}
+			if s.marker.CanUseHolder(toPtr) {
+				hasPtr = fromPtr
 			}
-			if !s.presenceProvider.IsFieldSet(hasPtr, int(field.to.Index)) {
+			if !s.marker.IsSet(hasPtr, int(field.to.Index)) {
 				continue //skip diff, to/dest is not set
 			}
-			if field.tag != nil && field.tag.Presence {
+			if field.tag != nil && field.tag.PresenceMarker {
 				continue //do not compare presence tag
 			}
 		}
@@ -65,7 +64,7 @@ func (s *structDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface
 				}
 			}
 			if fromValue == nil {
-
+				diffChangeType = ChangeTypeCreate
 			}
 			if err = field.differ.diff(changeLog, path.Field(field.name), fromValue, toValue, diffChangeType, options); err != nil {
 				return err
@@ -100,18 +99,17 @@ func (s *structDiffer) matchFields() error {
 		matcher.build(s.to, s.config)
 	}
 
-	var filedPos = map[string]int{}
+	marker, err := structology.NewMarker(s.fromType)
+	if err == nil {
+		s.marker = *marker
+	}
 	for i := range s.from.Fields {
 		fromField := &s.from.Fields[i]
-		filedPos[fromField.Name] = int(fromField.Index)
 		tag, err := ParseTag(fromField.Tag.Get(s.config.TagName))
 		if err != nil {
 			return err
 		}
-		if tag.Presence {
-			s.presenceProvider.Holder = fromField
-			continue
-		}
+
 		if tag.Ignore {
 			continue
 		}
@@ -137,6 +135,7 @@ func (s *structDiffer) matchFields() error {
 			}
 			aField.differ = &Differ{config: s.config, mapDiffer: differ}
 		case reflect.Struct:
+
 			if aField.from.Type == s.fromType {
 				aField.differ = &Differ{config: s.config, structDiffer: s}
 				continue
@@ -165,15 +164,12 @@ func (s *structDiffer) matchFields() error {
 			}
 		}
 	}
-	if s.presenceProvider.Holder != nil {
-		s.presenceProvider.Init(filedPos)
-	}
 	s.fields = fields
 	return nil
 }
 
 func newStructDiffer(from, to reflect.Type, config *Config) (*structDiffer, error) {
-	var result = structDiffer{config: config, fromType: from, toType: timeType}
+	var result = structDiffer{config: config, fromType: from, toType: to}
 
 	fromType := structType(from)
 	if fromType == nil {
@@ -183,6 +179,7 @@ func newStructDiffer(from, to reflect.Type, config *Config) (*structDiffer, erro
 	if toType == nil {
 		return nil, fmt.Errorf("invalid 'to' struct type: %s", to.String())
 	}
+
 	result.from = xunsafe.NewStruct(fromType)
 	result.to = result.from
 	if toType != fromType {
@@ -191,6 +188,5 @@ func newStructDiffer(from, to reflect.Type, config *Config) (*structDiffer, erro
 	if err := result.matchFields(); err != nil {
 		return nil, err
 	}
-
 	return &result, nil
 }

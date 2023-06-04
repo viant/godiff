@@ -1,6 +1,7 @@
 package godiff
 
 import (
+	"github.com/viant/structology"
 	"github.com/viant/xunsafe"
 	"reflect"
 	"strings"
@@ -50,6 +51,8 @@ func (m *matcher) build(xStruct *xunsafe.Struct, config *Config) {
 		xField := &xStruct.Fields[i]
 		tag, _ := ParseTag(string(xField.Tag))
 		tag.init(config)
+
+		tag.PresenceMarker = structology.IsSetMarker(xField.Tag)
 		fieldAccessor := newAccessor(i, xField, tag)
 		m.index[xField.Name] = &fieldAccessor
 		m.index[strings.ToLower(xField.Name)] = &fieldAccessor

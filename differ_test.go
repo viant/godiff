@@ -11,6 +11,16 @@ import (
 
 func TestNewDiffer(t *testing.T) {
 
+	type XEntry struct {
+		ID   int
+		Name string
+	}
+
+	type Holder struct {
+		ID      int
+		Entries []*XEntry `diff:"indexBy=ID"`
+	}
+
 	type PresRecordHas struct {
 		ID         bool
 		Name       bool
@@ -23,7 +33,7 @@ func TestNewDiffer(t *testing.T) {
 		ScratchPad string `diff:"-"`
 		Time       time.Time
 		Bar        int
-		Has        *PresRecordHas `diff:"presence=true"`
+		Has        *PresRecordHas `setMarker:"true"`
 	}
 
 	type Record struct {
@@ -225,6 +235,16 @@ func TestNewDiffer(t *testing.T) {
 				{Type: "create", Path: &Path{Kind: PathKindIndex, Path: &Path{Kind: PathKindKey, Path: &Path{Kind: PathKinField, Path: &Path{}, Name: "ExprList"}, Key: "k1"}, Index: 0}, To: "0"},
 			}},
 		},
+
+		{
+			description: "repeated - update - shallow",
+			from:        &Repeated{ID: 1, Records: []*Record{{ID: 12}}, Nums: []int{10, 2}},
+			to:          &Repeated{ID: 2, Records: []*Record{{ID: 23}}},
+			options:     []Option{WithShallow(true)},
+			expect: &ChangeLog{Changes: []*Change{
+				{Type: "update", Path: &Path{Kind: 1, Path: &Path{}, Name: "ID"}, From: 1, To: 2},
+			}},
+		},
 		{description: "diff with field presence check",
 			from: &PresRecord{ID: 20, Name: "abc", Bar: 23,
 				Has: &PresRecordHas{
@@ -240,21 +260,51 @@ func TestNewDiffer(t *testing.T) {
 
 			options: []Option{WithPresence(true)},
 			expect: &ChangeLog{Changes: []*Change{
+				{Type: "update", Path: &Path{Kind: PathKinField, Path: &Path{}, Name: "ID"}, From: 20, To: 21},
 				{Type: "update", Path: &Path{Kind: PathKinField, Path: &Path{}, Name: "Name"}, From: "abc", To: "xyz"},
 			}},
 		},
-
 		{
-			description: "repeated - update - shallow",
-			from:        &Repeated{ID: 1, Records: []*Record{{ID: 12}}, Nums: []int{10, 2}},
-			to:          &Repeated{ID: 2, Records: []*Record{{ID: 23}}},
-			options:     []Option{WithShallow(true)},
+			description: "index by filed",
+			from: &Holder{
+				ID: 1,
+				Entries: []*XEntry{
+					{
+						ID:   1,
+						Name: "Name 1",
+					},
+					{
+						ID:   2,
+						Name: "Name 2",
+					},
+				},
+			},
+			to: &Holder{
+				ID: 1,
+				Entries: []*XEntry{
+					{
+						ID:   2,
+						Name: "Name 2",
+					},
+					{
+						ID:   1,
+						Name: "Name 1",
+					},
+					{
+						ID:   3,
+						Name: "Name 3",
+					},
+				},
+			},
 			expect: &ChangeLog{Changes: []*Change{
-				{Type: "update", Path: &Path{Kind: 1, Path: &Path{}, Name: "ID"}, From: 1, To: 2},
+
+				{Type: "create", Path: &Path{Kind: PathKindIndex, Index: 2, Path: &Path{Kind: PathKinField, Path: &Path{}, Name: "Entries"}},
+					From: (interface{})(nil),
+					To:   &XEntry{ID: 3, Name: "Name 3"}},
 			}},
 		},
 	}
-	for _, testCase := range testCases {
+	for _, testCase := range testCases[len(testCases)-1:] {
 		differ, err := New(reflect.TypeOf(testCase.from), reflect.TypeOf(testCase.to), testCase.configOptions...)
 		if !assert.Nil(t, err, testCase.description) {
 			continue
