@@ -4,7 +4,7 @@ package godiff
 type ConfigOption func(config *Config)
 
 type Options struct {
-	presence     bool
+	setMarker    bool
 	shallow      bool
 	nullifyEmpty *bool
 	depth        int
@@ -35,9 +35,9 @@ func WithTag(tag *Tag) ConfigOption {
 	}
 }
 
-func WithPresence(f bool) Option {
+func WithSetMarker(f bool) Option {
 	return func(options *Options) {
-		options.presence = f
+		options.setMarker = f
 	}
 }
 

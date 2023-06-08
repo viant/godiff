@@ -34,7 +34,7 @@ func (s *structDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface
 			changeLog.AddError(path.Field(field.name), err)
 			continue
 		}
-		if options.presence {
+		if options.setMarker {
 			hasPtr := toPtr
 			if s.marker.CanUseHolder(toPtr) {
 				hasPtr = fromPtr
@@ -43,7 +43,7 @@ func (s *structDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface
 				continue //skip diff, to/dest is not set
 			}
 			if field.tag != nil && field.tag.PresenceMarker {
-				continue //do not compare presence tag
+				continue //do not compare setMarker tag
 			}
 		}
 

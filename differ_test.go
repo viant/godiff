@@ -245,7 +245,7 @@ func TestNewDiffer(t *testing.T) {
 				{Type: "update", Path: &Path{Kind: 1, Path: &Path{}, Name: "ID"}, From: 1, To: 2},
 			}},
 		},
-		{description: "diff with field presence check",
+		{description: "diff with field setMarker check",
 			from: &PresRecord{ID: 20, Name: "abc", Bar: 23,
 				Has: &PresRecordHas{
 					Name: true,
@@ -258,7 +258,7 @@ func TestNewDiffer(t *testing.T) {
 				},
 			},
 
-			options: []Option{WithPresence(true)},
+			options: []Option{WithSetMarker(true)},
 			expect: &ChangeLog{Changes: []*Change{
 				{Type: "update", Path: &Path{Kind: PathKinField, Path: &Path{}, Name: "ID"}, From: 20, To: 21},
 				{Type: "update", Path: &Path{Kind: PathKinField, Path: &Path{}, Name: "Name"}, From: "abc", To: "xyz"},
