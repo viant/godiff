@@ -31,6 +31,6 @@ type (
 		Path  *Path
 		From  interface{}
 		To    interface{}
-		Error string
+		Error string `json:",omitempty"`
 	}
 )
