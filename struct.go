@@ -2,9 +2,10 @@ package godiff
 
 import (
 	"fmt"
+	"reflect"
+
 	"github.com/viant/structology"
 	"github.com/viant/xunsafe"
-	"reflect"
 )
 
 type (
@@ -74,12 +75,28 @@ func (s *structDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface
 
 		switch changeType {
 		case ChangeTypeCreate:
-			if !field.to.IsNil(toPtr) {
+			// For non-nilable kinds (e.g., bool, int, string) zero-values are valid and
+			// must not be treated as nil. Only consult IsNil for nilable kinds.
+			switch field.to.Type.Kind() {
+			case reflect.Ptr, reflect.Map, reflect.Slice, reflect.Chan, reflect.Func, reflect.Interface:
+				if !field.to.IsNil(toPtr) {
+					changeLog.AddCreate(path.Field(field.name), toValue)
+					continue
+				}
+			default:
 				changeLog.AddCreate(path.Field(field.name), toValue)
 				continue
 			}
 		case ChangeTypeDelete:
-			if !field.from.IsNil(fromPtr) {
+			// For non-nilable kinds (e.g., bool, int, string) zero-values are valid and
+			// must not be treated as nil. Only consult IsNil for nilable kinds.
+			switch field.from.Type.Kind() {
+			case reflect.Ptr, reflect.Map, reflect.Slice, reflect.Chan, reflect.Func, reflect.Interface:
+				if !field.from.IsNil(fromPtr) {
+					changeLog.AddDelete(path.Field(field.name), fromValue)
+					continue
+				}
+			default:
 				changeLog.AddDelete(path.Field(field.name), fromValue)
 				continue
 			}

@@ -2,9 +2,10 @@ package godiff
 
 import (
 	"fmt"
-	"github.com/viant/xunsafe"
 	"reflect"
 	"unsafe"
+
+	"github.com/viant/xunsafe"
 )
 
 type nullifierKind int
@@ -55,8 +56,20 @@ func (d *accessor) normalize(value interface{}) (interface{}, error) {
 }
 
 func (d *accessor) Value(ptr unsafe.Pointer) (value interface{}, err error) {
-	if d.IsNil(ptr) {
+	// If the parent struct pointer is nil, any field is effectively nil.
+	// This prevents nil dereference on non-nilable kinds when the owner is nil.
+	if ptr == nil {
 		return nil, nil
+	}
+
+	// Only treat fields as nil when the underlying kind supports nil.
+	// For non-nilable kinds (e.g., bool, int, string), false/0/"" are valid values
+	// and must not be coerced to nil.
+	switch d.Field.Type.Kind() {
+	case reflect.Ptr, reflect.Map, reflect.Slice, reflect.Chan, reflect.Func, reflect.Interface:
+		if d.IsNil(ptr) {
+			return nil, nil
+		}
 	}
 	value = d.Field.Value(ptr)
 	if value, err = d.normalize(value); err != nil {
