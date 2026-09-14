@@ -37,21 +37,25 @@ func (s *mapDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{},
 
 	if from == nil {
 		for k, v := range toMap {
-			if err = s.diffIfaceElement(changeLog, path, nil, v, k, ChangeTypeDelete, options); err != nil {
+			if err = s.diffIfaceElement(changeLog, path, nil, v, k, ChangeTypeCreate, options); err != nil {
 				return err
 			}
 		}
 	} else if to == nil {
 		for k, v := range fromMap {
-			if err = s.diffIfaceElement(changeLog, path, v, nil, k, ChangeTypeCreate, options); err != nil {
+			if err = s.diffIfaceElement(changeLog, path, v, nil, k, ChangeTypeDelete, options); err != nil {
 				return err
 			}
 		}
 	} else {
 
 		for k, fromItem := range fromMap {
-			toItem := toMap[k]
-			if err = s.diffIfaceElement(changeLog, path, fromItem, toItem, k, ChangeTypeCreate, options); err != nil {
+			toItem, present := toMap[k]
+			kind := ChangeTypeUpdate
+			if !present {
+				kind = ChangeTypeDelete
+			}
+			if err = s.diffIfaceElement(changeLog, path, fromItem, toItem, k, kind, options); err != nil {
 				return err
 			}
 		}
@@ -69,36 +73,7 @@ func (s *mapDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{},
 }
 
 func (s *mapDiffer) diffIfaceElement(changeLog *ChangeLog, path *Path, from, to interface{}, key string, changeType ChangeType, options *Options) error {
-	var fromValue, toValue reflect.Value
-	if from == nil && to == nil {
-		return nil
-	}
-
-	if to != nil {
-		toValue = reflect.ValueOf(to)
-		fromValue = toValue
-	} else if from != nil {
-		fromValue = reflect.ValueOf(from)
-		toValue = fromValue
-	} else {
-		toValue = reflect.ValueOf(to)
-		fromValue = reflect.ValueOf(from)
-	}
-
-	if fromValue.Kind() == reflect.Ptr {
-		fromValue = fromValue.Elem()
-		from = fromValue.Interface()
-	}
-	if toValue.Kind() == reflect.Ptr {
-		toValue = toValue.Elem()
-		to = toValue.Elem()
-	}
-
-	itemDiffer, err := s.config.registry.Get(fromValue.Type(), toValue.Type(), s.tag)
-	if err != nil {
-		return err
-	}
-	return itemDiffer.diff(changeLog, path.Entry(key), from, to, changeType, options)
+	return (&ifaceDiffer{config: s.config, tag: s.tag}).diff(changeLog, path.Entry(key), from, to, changeType, options)
 }
 
 func newMapDiffer(from, to reflect.Type, config *Config, tag *Tag) (*mapDiffer, error) {

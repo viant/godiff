@@ -86,7 +86,7 @@ func (s *sliceDiffer) diffSliceElements(changeLog *ChangeLog, path *Path, change
 				}
 				continue
 			}
-			changeLog.AddCreate(path.Element(i), value)
+			changeLog.AddDelete(path.Element(i), value)
 		case ChangeTypeUpdate:
 			if fromLen <= i {
 				value := s.toSlice.ValueAt(toPtr, i)
@@ -106,7 +106,7 @@ func (s *sliceDiffer) diffSliceElements(changeLog *ChangeLog, path *Path, change
 					}
 					continue
 				}
-				changeLog.AddCreate(path.Element(i), value)
+				changeLog.AddDelete(path.Element(i), value)
 				continue
 			}
 
@@ -197,8 +197,8 @@ func (s *sliceDiffer) diffIfacedSlice(changeLog *ChangeLog, path *Path, from int
 		case ChangeTypeUpdate:
 
 			if i < fromLen && i >= toLen {
-				value := s.toSlice.ValueAt(toPtr, i)
-				if err = s.diffIfaceElement(changeLog, path, nil, value, i, ChangeTypeCreate, options); err != nil {
+				value := s.fromSlice.ValueAt(fromPtr, i)
+				if err = s.diffIfaceElement(changeLog, path, value, nil, i, ChangeTypeDelete, options); err != nil {
 					return err
 				}
 				continue
@@ -206,7 +206,7 @@ func (s *sliceDiffer) diffIfacedSlice(changeLog *ChangeLog, path *Path, from int
 
 			if i < toLen && i >= fromLen {
 				value := s.toSlice.ValueAt(toPtr, i)
-				if err = s.diffIfaceElement(changeLog, path, value, nil, i, ChangeTypeDelete, options); err != nil {
+				if err = s.diffIfaceElement(changeLog, path, nil, value, i, ChangeTypeCreate, options); err != nil {
 					return err
 				}
 				continue
@@ -224,35 +224,7 @@ func (s *sliceDiffer) diffIfacedSlice(changeLog *ChangeLog, path *Path, from int
 }
 
 func (s *sliceDiffer) diffIfaceElement(changeLog *ChangeLog, path *Path, from, to interface{}, index int, changeType ChangeType, options *Options) error {
-	var fromValue, toValue reflect.Value
-	if from == nil && to == nil {
-		return nil
-	}
-	if to != nil {
-		toValue = reflect.ValueOf(to)
-		fromValue = toValue
-	} else if from != nil {
-		fromValue = reflect.ValueOf(from)
-		toValue = fromValue
-	} else {
-		toValue = reflect.ValueOf(to)
-		fromValue = reflect.ValueOf(from)
-	}
-
-	if fromValue.Kind() == reflect.Ptr {
-		fromValue = fromValue.Elem()
-		from = fromValue.Interface()
-	}
-	if toValue.Kind() == reflect.Ptr {
-		toValue = toValue.Elem()
-		to = toValue.Elem()
-	}
-
-	itemDiffer, err := s.config.registry.Get(fromValue.Type(), toValue.Type(), s.tag)
-	if err != nil {
-		return err
-	}
-	return itemDiffer.diff(changeLog, path.Element(index), from, to, changeType, options)
+	return (&ifaceDiffer{config: s.config, tag: s.tag}).diff(changeLog, path.Element(index), from, to, changeType, options)
 }
 
 func newSliceDiffer(from, to reflect.Type, config *Config, tag *Tag) (*sliceDiffer, error) {

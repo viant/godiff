@@ -12,59 +12,48 @@ type (
 )
 
 func (d *ifaceDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{}, changeType ChangeType, options *Options) error {
+	from, fromType := d.value(from)
+	to, toType := d.value(to)
 	if from == nil && to == nil {
+		switch changeType {
+		case ChangeTypeCreate:
+			changeLog.AddCreate(path, nil)
+		case ChangeTypeDelete:
+			changeLog.AddDelete(path, nil)
+		}
 		return nil
 	}
-	var fromValue, toValue reflect.Value
-	var fromStruct, toStruct reflect.Type
-
-	if from != nil {
-		fromValue = reflect.ValueOf(from)
-		fromStruct = structType(fromValue.Type())
+	if fromType == nil {
+		fromType = toType
 	}
-
-	if to != nil {
-		toValue = reflect.ValueOf(to)
-		toStruct = structType(toValue.Type())
+	if toType == nil {
+		toType = fromType
 	}
-
-	if fromStruct != nil && toStruct != nil {
-		differ, err := d.config.registry.Get(fromStruct, toStruct, d.tag)
-		if err != nil {
-			return err
-		}
-		if fromValue.Kind() == reflect.Ptr {
-			from = fromValue.Elem().Interface()
-		}
-		if toValue.Kind() == reflect.Ptr {
-			to = toValue.Elem().Interface()
-		}
-		return differ.diff(changeLog, path, from, to, changeType, options)
+	differ, err := d.config.registry.Get(fromType, toType, d.tag)
+	if err != nil {
+		return err
 	}
+	return differ.diff(changeLog, path, from, to, changeType, options)
+}
 
-	if from == nil && toStruct != nil {
-		differ, err := d.config.registry.Get(toStruct, toStruct, d.tag)
-		if err != nil {
-			return err
-		}
-		if toValue.Kind() == reflect.Ptr {
-			to = toValue.Elem().Interface()
-		}
-		return differ.diff(changeLog, path, from, to, ChangeTypeCreate, options)
+// value keeps concrete type authority while safely unwrapping pointer values.
+func (d *ifaceDiffer) value(value interface{}) (interface{}, reflect.Type) {
+	if value == nil {
+		return nil, nil
 	}
-
-	if to == nil && fromStruct != nil {
-		differ, err := d.config.registry.Get(fromStruct, fromStruct, d.tag)
-		if err != nil {
-			return err
+	v := reflect.ValueOf(value)
+	typ := v.Type()
+	for typ.Kind() == reflect.Ptr {
+		typ = typ.Elem()
+		if v.IsNil() {
+			for typ.Kind() == reflect.Ptr {
+				typ = typ.Elem()
+			}
+			return nil, typ
 		}
-		if fromValue.Kind() == reflect.Ptr {
-			from = fromValue.Elem().Interface()
-		}
-		return differ.diff(changeLog, path, from, to, ChangeTypeDelete, options)
+		v = v.Elem()
 	}
-
-	return nil
+	return v.Interface(), typ
 }
 
 func newIfaceDiffer(config *Config, tag *Tag) (*ifaceDiffer, error) {
