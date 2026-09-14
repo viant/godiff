@@ -43,3 +43,18 @@ func TestCollectionNilPointersAndDeletion(t *testing.T) {
 		})
 	}
 }
+
+func TestInterfaceConcreteTypeChanges(t *testing.T) {
+	for _, pair := range [][2]interface{}{{1, "one"}, {"one", 1}, {[]int{1}, "one"}, {nil, "one"}} {
+		from := map[string]interface{}{"value": pair[0]}
+		to := map[string]interface{}{"value": pair[1]}
+		d, err := New(reflect.TypeOf(from), reflect.TypeOf(to))
+		if err != nil {
+			t.Fatal(err)
+		}
+		changes := d.Diff(from, to).Changes
+		if len(changes) != 1 || changes[0].Error != "" || changes[0].Type != ChangeTypeUpdate || !reflect.DeepEqual(changes[0].From, pair[0]) || !reflect.DeepEqual(changes[0].To, pair[1]) {
+			t.Fatalf("pair=%v changes=%+v", pair, changes)
+		}
+	}
+}

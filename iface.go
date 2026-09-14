@@ -29,6 +29,11 @@ func (d *ifaceDiffer) diff(changeLog *ChangeLog, path *Path, from, to interface{
 	if toType == nil {
 		toType = fromType
 	}
+	// A concrete type replacement is a value update, not a schema conversion.
+	if from != nil && to != nil && fromType != toType && (structType(fromType) == nil || structType(toType) == nil) {
+		changeLog.AddUpdate(path, from, to)
+		return nil
+	}
 	differ, err := d.config.registry.Get(fromType, toType, d.tag)
 	if err != nil {
 		return err
